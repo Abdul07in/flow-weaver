@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/run-block")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         let parsed: z.infer<typeof RequestSchema>;
         try {
           const raw = await request.json();
