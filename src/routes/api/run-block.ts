@@ -22,6 +22,8 @@ function json(data: unknown, status = 200): Response {
 }
 
 export const Route = createFileRoute("/api/run-block")({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...({} as any),
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
