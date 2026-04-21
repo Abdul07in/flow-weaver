@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FlowsFlowIdRouteImport } from './routes/flows/$flowId'
+import { Route as ApiRunBlockRouteImport } from './routes/api/run-block'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FlowsFlowIdRoute = FlowsFlowIdRouteImport.update({
+  id: '/flows/$flowId',
+  path: '/flows/$flowId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRunBlockRoute = ApiRunBlockRouteImport.update({
+  id: '/api/run-block',
+  path: '/api/run-block',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/run-block': typeof ApiRunBlockRoute
+  '/flows/$flowId': typeof FlowsFlowIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/run-block': typeof ApiRunBlockRoute
+  '/flows/$flowId': typeof FlowsFlowIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/run-block': typeof ApiRunBlockRoute
+  '/flows/$flowId': typeof FlowsFlowIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/run-block' | '/flows/$flowId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/run-block' | '/flows/$flowId'
+  id: '__root__' | '/' | '/api/run-block' | '/flows/$flowId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiRunBlockRoute: typeof ApiRunBlockRoute
+  FlowsFlowIdRoute: typeof FlowsFlowIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,21 +68,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/flows/$flowId': {
+      id: '/flows/$flowId'
+      path: '/flows/$flowId'
+      fullPath: '/flows/$flowId'
+      preLoaderRoute: typeof FlowsFlowIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/run-block': {
+      id: '/api/run-block'
+      path: '/api/run-block'
+      fullPath: '/api/run-block'
+      preLoaderRoute: typeof ApiRunBlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiRunBlockRoute: ApiRunBlockRoute,
+  FlowsFlowIdRoute: FlowsFlowIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
