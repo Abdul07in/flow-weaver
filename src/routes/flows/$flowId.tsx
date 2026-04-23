@@ -311,7 +311,7 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="params">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="params">
               Params{" "}
