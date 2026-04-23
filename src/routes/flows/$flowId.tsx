@@ -261,7 +261,7 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
         className={cn(
-          "mx-auto max-w-4xl space-y-4 rounded-xl p-6 ring-2 transition-all duration-300",
+          "mx-auto my-6 max-w-4xl space-y-4 rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)] ring-2 transition-all duration-300",
           statusRing,
         )}
       >
