@@ -209,6 +209,15 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
   const isRunning = useFlowStore((s) => s.isRunning);
 
   const [bodyError, setBodyError] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("params");
+  const status = runState?.status ?? "idle";
+
+  // Auto-switch to Response tab when this block starts running or finishes during a run
+  useEffect(() => {
+    if (status === "running" || status === "success" || status === "error") {
+      setTab("response");
+    }
+  }, [status]);
 
   const onBodyChange = (v: string) => {
     updateBlock(block.id, { body: v });
@@ -233,6 +242,15 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
       /* ignore */
     }
   };
+
+  const statusRing =
+    status === "success"
+      ? "ring-status-success/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-success)_15%,transparent)]"
+      : status === "error"
+        ? "ring-status-error/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-error)_15%,transparent)]"
+        : status === "running"
+          ? "ring-status-running/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-running)_15%,transparent)] animate-pulse"
+          : "ring-transparent";
 
   return (
     <ScrollArea className="h-[calc(100vh-49px)]">
