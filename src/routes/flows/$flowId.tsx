@@ -167,10 +167,10 @@ function Editor() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left rail */}
-        <aside className="w-72 shrink-0 border-r bg-muted/20">
-          <ScrollArea className="h-[calc(100vh-49px)]">
-            <div className="space-y-2 p-3">
+        {/* Left rail — light surface */}
+        <aside className="w-72 shrink-0 border-r bg-card">
+          <ScrollArea className="h-[calc(100vh-61px)]">
+            <div className="space-y-2.5 p-4">
               <AnimatePresence>
                 {flow.blocks.map((b, i) => (
                   <BlockCard
@@ -194,8 +194,8 @@ function Editor() {
           </ScrollArea>
         </aside>
 
-        {/* Main panel */}
-        <main className="flex-1 overflow-hidden">
+        {/* Main panel — light editorial surface */}
+        <main className="flex-1 overflow-hidden surface-light">
           {selected ? (
             <BlockEditor key={selected.id} blockIdx={selectedIdx} onRunFromHere={() => run(selectedIdx)} />
           ) : (
