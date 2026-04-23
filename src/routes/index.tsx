@@ -110,15 +110,15 @@ function FlowCard({
     <Link
       to="/flows/$flowId"
       params={{ flowId: flow.id }}
-      className="group block rounded-xl border bg-card p-4 shadow-[var(--shadow-soft)] transition hover:border-primary/40 hover:shadow-[var(--shadow-elevated)]"
+      className="group block rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate font-semibold">{flow.name}</h3>
+            <h3 className="truncate text-lg font-light tracking-tight">{flow.name}</h3>
             {flow.lastRunStatus && <StatusDot status={flow.lastRunStatus} />}
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {flow.blocks.length} {flow.blocks.length === 1 ? "block" : "blocks"} · updated{" "}
             {new Date(flow.updatedAt).toLocaleDateString()}
           </p>
@@ -127,7 +127,7 @@ function FlowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-8 w-8"
             onClick={(e) => {
               e.preventDefault();
               onDuplicate();
@@ -138,7 +138,7 @@ function FlowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 hover:text-destructive"
+            className="h-8 w-8 hover:text-destructive"
             onClick={(e) => {
               e.preventDefault();
               onDelete();
