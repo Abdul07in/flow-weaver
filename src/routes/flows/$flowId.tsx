@@ -30,6 +30,7 @@ import { KeyValueEditor } from "@/components/flow/KeyValueEditor";
 import { ResponseViewer } from "@/components/flow/ResponseViewer";
 import { VariablePicker } from "@/components/flow/VariablePicker";
 import { useRunner } from "@/hooks/useRunner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/flows/$flowId")({
   loader: async ({ params }) => {
@@ -209,6 +210,15 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
   const isRunning = useFlowStore((s) => s.isRunning);
 
   const [bodyError, setBodyError] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("params");
+  const status = runState?.status ?? "idle";
+
+  // Auto-switch to Response tab when this block starts running or finishes during a run
+  useEffect(() => {
+    if (status === "running" || status === "success" || status === "error") {
+      setTab("response");
+    }
+  }, [status]);
 
   const onBodyChange = (v: string) => {
     updateBlock(block.id, { body: v });
@@ -234,6 +244,15 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
     }
   };
 
+  const statusRing =
+    status === "success"
+      ? "ring-status-success/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-success)_15%,transparent)]"
+      : status === "error"
+        ? "ring-status-error/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-error)_15%,transparent)]"
+        : status === "running"
+          ? "ring-status-running/70 shadow-[0_0_0_4px_color-mix(in_oklab,var(--status-running)_15%,transparent)] animate-pulse"
+          : "ring-transparent";
+
   return (
     <ScrollArea className="h-[calc(100vh-49px)]">
       <motion.div
@@ -241,7 +260,10 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
         initial={{ opacity: 0, x: 8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
-        className="mx-auto max-w-4xl space-y-4 p-6"
+        className={cn(
+          "mx-auto max-w-4xl space-y-4 rounded-xl p-6 ring-2 transition-all duration-300",
+          statusRing,
+        )}
       >
         {/* Header */}
         <div className="flex items-center gap-2">
@@ -290,7 +312,7 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="params">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="params">
               Params{" "}
