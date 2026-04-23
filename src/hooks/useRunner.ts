@@ -23,7 +23,12 @@ export function useRunner() {
         startIndex,
         signal: ctrl.signal,
         onUpdate: ({ blockId, status, response }) => {
-          useFlowStore.getState().setRunState(blockId, status, response);
+          const s = useFlowStore.getState();
+          s.setRunState(blockId, status, response);
+          // Auto-focus the block currently running / just finished
+          if (status === "running" || status === "success" || status === "error") {
+            s.selectBlock(blockId);
+          }
         },
       });
     } finally {
