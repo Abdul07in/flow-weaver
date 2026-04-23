@@ -51,11 +51,8 @@ export function BlockCard({
         <span className="flex-1 truncate text-sm font-medium">{block.name}</span>
         <StatusDot status={status} />
       </div>
-      <div className="mt-1 truncate pl-6 font-mono text-[11px] text-muted-foreground">
-        {block.url || "—"}
-      </div>
 
-      <div className="absolute right-1 top-1 flex opacity-0 transition group-hover:opacity-100">
+      <div className="mt-2 flex items-center justify-end gap-0.5">
         <IconBtn onClick={() => onMove(-1)} disabled={index === 0}>
           <ChevronUp className="h-3 w-3" />
         </IconBtn>
