@@ -41,8 +41,10 @@ export function BlockCard({
       transition={{ duration: 0.25 }}
       onClick={onSelect}
       className={cn(
-        "group relative cursor-pointer rounded-lg border bg-card px-3 py-2.5 shadow-[var(--shadow-soft)] transition",
-        selected ? "border-primary ring-2 ring-primary/20" : "hover:border-foreground/20",
+        "group relative cursor-pointer rounded-xl border bg-card px-3.5 py-3 shadow-[var(--shadow-soft)] transition-all duration-200",
+        selected
+          ? "border-primary shadow-[0_0_0_2px_var(--primary),var(--shadow-elevated)]"
+          : "hover:border-foreground/20 hover:shadow-[var(--shadow-elevated)]",
       )}
     >
       <div className="flex items-center gap-2">
