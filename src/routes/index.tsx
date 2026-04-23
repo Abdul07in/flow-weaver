@@ -55,15 +55,16 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      {/* Console-black masthead — PlayStation channel layout */}
+      <header className="surface-dark border-b border-white/10">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Workflow className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">API Flow Builder</h1>
-              <p className="text-[11px] text-muted-foreground">Chain. Run. Inspect.</p>
+              <h1 className="text-xl font-light tracking-tight text-white">API Flow Builder</h1>
+              <p className="text-xs font-normal text-white/60">Chain. Run. Inspect.</p>
             </div>
           </div>
           <Button onClick={newFlow} className="gap-1.5">
@@ -72,26 +73,35 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        {loading ? null : flows.length === 0 ? (
-          <EmptyState onCreate={newFlow} />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {flows.map((f) => (
-                <motion.div
-                  layout
-                  key={f.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                >
-                  <FlowCard flow={f} onDelete={() => remove(f.id)} onDuplicate={() => duplicate(f)} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+      {/* Light editorial panel */}
+      <main className="surface-light">
+        <div className="mx-auto max-w-6xl px-6 py-14">
+          <div className="mb-10">
+            <h2 className="text-[2.2rem] font-light leading-tight tracking-tight">Your flows</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A gallery of API sequences. Open one to edit and run.
+            </p>
           </div>
-        )}
+          {loading ? null : flows.length === 0 ? (
+            <EmptyState onCreate={newFlow} />
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence mode="popLayout">
+                {flows.map((f) => (
+                  <motion.div
+                    layout
+                    key={f.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <FlowCard flow={f} onDelete={() => remove(f.id)} onDuplicate={() => duplicate(f)} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
@@ -110,15 +120,15 @@ function FlowCard({
     <Link
       to="/flows/$flowId"
       params={{ flowId: flow.id }}
-      className="group block rounded-xl border bg-card p-4 shadow-[var(--shadow-soft)] transition hover:border-primary/40 hover:shadow-[var(--shadow-elevated)]"
+      className="group block rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate font-semibold">{flow.name}</h3>
+            <h3 className="truncate text-lg font-light tracking-tight">{flow.name}</h3>
             {flow.lastRunStatus && <StatusDot status={flow.lastRunStatus} />}
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {flow.blocks.length} {flow.blocks.length === 1 ? "block" : "blocks"} · updated{" "}
             {new Date(flow.updatedAt).toLocaleDateString()}
           </p>
@@ -127,7 +137,7 @@ function FlowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-8 w-8"
             onClick={(e) => {
               e.preventDefault();
               onDuplicate();
@@ -138,7 +148,7 @@ function FlowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 hover:text-destructive"
+            className="h-8 w-8 hover:text-destructive"
             onClick={(e) => {
               e.preventDefault();
               onDelete();
@@ -157,16 +167,16 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto mt-20 max-w-md rounded-2xl border border-dashed bg-card/40 p-10 text-center"
+      className="mx-auto mt-10 max-w-md rounded-3xl border border-dashed bg-card/40 p-12 text-center"
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
         <FileJson className="h-7 w-7" />
       </div>
-      <h2 className="mt-4 text-lg font-semibold">No flows yet</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h2 className="mt-5 text-2xl font-light tracking-tight">No flows yet</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
         Create your first flow to chain API calls and pipe data between them.
       </p>
-      <Button onClick={onCreate} className="mt-5 gap-1.5">
+      <Button onClick={onCreate} className="mt-6 gap-1.5">
         <Plus className="h-4 w-4" /> Create your first flow
       </Button>
     </motion.div>

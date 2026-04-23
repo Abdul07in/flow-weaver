@@ -114,20 +114,20 @@ function Editor() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Top bar */}
-      <header className="flex items-center gap-3 border-b bg-card/60 px-4 py-2.5 backdrop-blur">
+      {/* Console-black masthead */}
+      <header className="surface-dark flex items-center gap-3 border-b border-white/10 px-4 py-3 text-white">
         <Link
           to="/"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <Input
           value={flow.name}
           onChange={(e) => setName(e.target.value)}
-          className="h-8 max-w-xs border-transparent bg-transparent text-base font-semibold shadow-none focus-visible:border-input focus-visible:bg-background"
+          className="h-9 max-w-xs border-transparent bg-transparent text-base font-light tracking-tight text-white shadow-none placeholder:text-white/40 focus-visible:border-white/20 focus-visible:bg-white/5 focus-visible:shadow-none"
         />
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -139,10 +139,20 @@ function Editor() {
               e.target.value = "";
             }}
           />
-          <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-white hover:bg-white/10 hover:text-white"
+          >
             <Upload className="h-3.5 w-3.5" /> Import
           </Button>
-          <Button variant="ghost" size="sm" onClick={exportJson}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportJson}
+            className="text-white hover:bg-white/10 hover:text-white"
+          >
             <Download className="h-3.5 w-3.5" /> Export
           </Button>
           <Button onClick={() => run(0)} disabled={isRunning} className="gap-1.5">
@@ -157,10 +167,10 @@ function Editor() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left rail */}
-        <aside className="w-72 shrink-0 border-r bg-muted/20">
-          <ScrollArea className="h-[calc(100vh-49px)]">
-            <div className="space-y-2 p-3">
+        {/* Left rail — light surface */}
+        <aside className="w-72 shrink-0 border-r bg-card">
+          <ScrollArea className="h-[calc(100vh-61px)]">
+            <div className="space-y-2.5 p-4">
               <AnimatePresence>
                 {flow.blocks.map((b, i) => (
                   <BlockCard
@@ -184,8 +194,8 @@ function Editor() {
           </ScrollArea>
         </aside>
 
-        {/* Main panel */}
-        <main className="flex-1 overflow-hidden">
+        {/* Main panel — light editorial surface */}
+        <main className="flex-1 overflow-hidden surface-light">
           {selected ? (
             <BlockEditor key={selected.id} blockIdx={selectedIdx} onRunFromHere={() => run(selectedIdx)} />
           ) : (
@@ -254,14 +264,14 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
           : "ring-transparent";
 
   return (
-    <ScrollArea className="h-[calc(100vh-49px)]">
+    <ScrollArea className="h-[calc(100vh-61px)]">
       <motion.div
         key={block.id}
         initial={{ opacity: 0, x: 8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
         className={cn(
-          "mx-auto my-6 max-w-4xl space-y-4 rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)] ring-2 transition-all duration-300",
+          "mx-auto my-8 max-w-4xl space-y-5 rounded-3xl border bg-card p-8 shadow-[var(--shadow-elevated)] ring-2 transition-all duration-300",
           statusRing,
         )}
       >
@@ -270,7 +280,7 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
           <Input
             value={block.name}
             onChange={(e) => updateBlock(block.id, { name: e.target.value })}
-            className="h-9 max-w-xs text-base font-semibold"
+            className="h-10 max-w-xs text-lg font-light tracking-tight"
           />
           <Button
             variant="outline"
