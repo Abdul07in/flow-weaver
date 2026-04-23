@@ -259,7 +259,10 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
         initial={{ opacity: 0, x: 8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
-        className="mx-auto max-w-4xl space-y-4 p-6"
+        className={cn(
+          "mx-auto max-w-4xl space-y-4 rounded-xl p-6 ring-2 transition-all duration-300",
+          statusRing,
+        )}
       >
         {/* Header */}
         <div className="flex items-center gap-2">
