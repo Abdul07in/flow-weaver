@@ -264,14 +264,14 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
           : "ring-transparent";
 
   return (
-    <ScrollArea className="h-[calc(100vh-49px)]">
+    <ScrollArea className="h-[calc(100vh-61px)]">
       <motion.div
         key={block.id}
         initial={{ opacity: 0, x: 8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
         className={cn(
-          "mx-auto my-6 max-w-4xl space-y-4 rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)] ring-2 transition-all duration-300",
+          "mx-auto my-8 max-w-4xl space-y-5 rounded-3xl border bg-card p-8 shadow-[var(--shadow-elevated)] ring-2 transition-all duration-300",
           statusRing,
         )}
       >
@@ -280,7 +280,7 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
           <Input
             value={block.name}
             onChange={(e) => updateBlock(block.id, { name: e.target.value })}
-            className="h-9 max-w-xs text-base font-semibold"
+            className="h-10 max-w-xs text-lg font-light tracking-tight"
           />
           <Button
             variant="outline"
