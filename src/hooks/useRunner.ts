@@ -48,12 +48,18 @@ export function useRunner() {
     abortRef.current = ctrl;
 
     try {
-      // Build a single-block "flow" but seed responses from any prior successful runs
-      // by passing a slice — runFlow only iterates from startIndex to startIndex+1.
+      // Seed prior responses by name so {{Block.body...}} still resolves.
+      const seedResponses: Record<string, NonNullable<ReturnType<typeof state.runStates[string]>["response"]>> = {} as never;
+      for (let i = 0; i < index; i++) {
+        const prev = blocks[i];
+        const r = state.runStates[prev.id]?.response;
+        if (r) (seedResponses as Record<string, typeof r>)[prev.name] = r;
+      }
       const oneBlock = [blocks[index]];
       await runFlow(oneBlock, {
         startIndex: 0,
         signal: ctrl.signal,
+        seedResponses,
         onUpdate: ({ blockId, status, response }) => {
           const s = useFlowStore.getState();
           s.setRunState(blockId, status, response);

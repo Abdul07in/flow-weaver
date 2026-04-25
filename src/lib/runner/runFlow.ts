@@ -13,12 +13,13 @@ export interface RunOptions {
   executor?: BlockExecutor;
   onUpdate?: (u: RunUpdate) => void;
   signal?: AbortSignal;
+  seedResponses?: ResponseMap;
 }
 
 /** Execute blocks sequentially, stop on first error. Pure orchestration. */
 export async function runFlow(blocks: Block[], opts: RunOptions = {}): Promise<ResponseMap> {
-  const { startIndex = 0, executor = defaultExecutor, onUpdate, signal } = opts;
-  const responses: ResponseMap = {};
+  const { startIndex = 0, executor = defaultExecutor, onUpdate, signal, seedResponses } = opts;
+  const responses: ResponseMap = { ...(seedResponses ?? {}) };
   for (let i = startIndex; i < blocks.length; i++) {
     if (signal?.aborted) break;
     const block = blocks[i];
