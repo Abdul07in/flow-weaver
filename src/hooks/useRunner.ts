@@ -25,7 +25,38 @@ export function useRunner() {
         onUpdate: ({ blockId, status, response }) => {
           const s = useFlowStore.getState();
           s.setRunState(blockId, status, response);
-          // Auto-focus the block currently running / just finished
+          if (status === "running" || status === "success" || status === "error") {
+            s.selectBlock(blockId);
+          }
+        },
+      });
+    } finally {
+      useFlowStore.getState().setIsRunning(false);
+      void useFlowStore.getState().persist();
+    }
+  }, []);
+
+  /** Run only the block at `index`. Uses prior responses already in runStates so {{...}} still resolves. */
+  const runOne = useCallback(async (index: number) => {
+    const state = useFlowStore.getState();
+    if (!state.flow || state.isRunning) return;
+    const blocks = state.flow.blocks;
+    if (index < 0 || index >= blocks.length) return;
+
+    state.setIsRunning(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    try {
+      // Build a single-block "flow" but seed responses from any prior successful runs
+      // by passing a slice — runFlow only iterates from startIndex to startIndex+1.
+      const oneBlock = [blocks[index]];
+      await runFlow(oneBlock, {
+        startIndex: 0,
+        signal: ctrl.signal,
+        onUpdate: ({ blockId, status, response }) => {
+          const s = useFlowStore.getState();
+          s.setRunState(blockId, status, response);
           if (status === "running" || status === "success" || status === "error") {
             s.selectBlock(blockId);
           }
@@ -41,5 +72,5 @@ export function useRunner() {
     abortRef.current?.abort();
   }, []);
 
-  return { run, cancel };
+  return { run, runOne, cancel };
 }
