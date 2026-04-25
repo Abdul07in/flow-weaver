@@ -70,7 +70,7 @@ function Editor() {
   const moveBlock = useFlowStore((s) => s.moveBlock);
   const selectBlock = useFlowStore((s) => s.selectBlock);
 
-  const { run } = useRunner();
+  const { run, runOne } = useRunner();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -192,7 +192,12 @@ function Editor() {
         {/* Main panel */}
         <main className="flex-1 overflow-hidden">
           {selected ? (
-            <BlockEditor key={selected.id} blockIdx={selectedIdx} onRunFromHere={() => run(selectedIdx)} />
+            <BlockEditor
+              key={selected.id}
+              blockIdx={selectedIdx}
+              onRunFromHere={() => run(selectedIdx)}
+              onRunOne={() => runOne(selectedIdx)}
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No block selected.
