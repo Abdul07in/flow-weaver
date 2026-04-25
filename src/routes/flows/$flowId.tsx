@@ -9,6 +9,9 @@ import {
   Upload,
   PlayCircle,
   Loader2,
+  Lock,
+  Unlock,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { useFlowStore } from "@/store/flowStore";
 import { flowRepository } from "@/lib/storage/local";
 import { HTTP_METHODS, type HttpMethod } from "@/lib/flow/types";
@@ -29,6 +33,7 @@ import { BlockCard } from "@/components/flow/BlockCard";
 import { KeyValueEditor } from "@/components/flow/KeyValueEditor";
 import { ResponseViewer } from "@/components/flow/ResponseViewer";
 import { VariablePicker } from "@/components/flow/VariablePicker";
+import { ScriptEditorDialog, type ScriptKind } from "@/components/flow/ScriptEditorDialog";
 import { useRunner } from "@/hooks/useRunner";
 import { cn } from "@/lib/utils";
 
