@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useFlowStore } from "@/store/flowStore";
 import { runFlow } from "@/lib/runner/runFlow";
+import type { BlockResponse } from "@/lib/flow/types";
 
 export function useRunner() {
   const abortRef = useRef<AbortController | null>(null);
@@ -48,12 +49,11 @@ export function useRunner() {
     abortRef.current = ctrl;
 
     try {
-      // Seed prior responses by name so {{Block.body...}} still resolves.
-      const seedResponses: Record<string, NonNullable<ReturnType<typeof state.runStates[string]>["response"]>> = {} as never;
+      const seedResponses: Record<string, BlockResponse> = {};
       for (let i = 0; i < index; i++) {
         const prev = blocks[i];
         const r = state.runStates[prev.id]?.response;
-        if (r) (seedResponses as Record<string, typeof r>)[prev.name] = r;
+        if (r) seedResponses[prev.name] = r;
       }
       const oneBlock = [blocks[index]];
       await runFlow(oneBlock, {
