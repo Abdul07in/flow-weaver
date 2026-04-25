@@ -70,7 +70,7 @@ function Editor() {
   const moveBlock = useFlowStore((s) => s.moveBlock);
   const selectBlock = useFlowStore((s) => s.selectBlock);
 
-  const { run } = useRunner();
+  const { run, runOne } = useRunner();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -192,7 +192,12 @@ function Editor() {
         {/* Main panel */}
         <main className="flex-1 overflow-hidden">
           {selected ? (
-            <BlockEditor key={selected.id} blockIdx={selectedIdx} onRunFromHere={() => run(selectedIdx)} />
+            <BlockEditor
+              key={selected.id}
+              blockIdx={selectedIdx}
+              onRunFromHere={() => run(selectedIdx)}
+              onRunOne={() => runOne(selectedIdx)}
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No block selected.
@@ -204,7 +209,15 @@ function Editor() {
   );
 }
 
-function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromHere: () => void }) {
+function BlockEditor({
+  blockIdx,
+  onRunFromHere,
+  onRunOne,
+}: {
+  blockIdx: number;
+  onRunFromHere: () => void;
+  onRunOne: () => void;
+}) {
   const flow = useFlowStore((s) => s.flow)!;
   const block = flow.blocks[blockIdx];
   const runState = useFlowStore((s) => s.runStates[block.id]);
@@ -279,15 +292,27 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
             onChange={(e) => updateBlock(block.id, { name: e.target.value })}
             className="h-9 max-w-xs text-base font-semibold"
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRunFromHere}
-            disabled={isRunning}
-            className="ml-auto gap-1.5"
-          >
-            <PlayCircle className="h-3.5 w-3.5" /> Run from here
-          </Button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRunOne}
+              disabled={isRunning}
+              className="gap-1.5"
+              title="Run only this block"
+            >
+              <Play className="h-3.5 w-3.5" /> Run this
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRunFromHere}
+              disabled={isRunning}
+              className="gap-1.5"
+            >
+              <PlayCircle className="h-3.5 w-3.5" /> Run from here
+            </Button>
+          </div>
         </div>
 
         {/* Method + URL */}
