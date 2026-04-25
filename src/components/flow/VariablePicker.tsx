@@ -35,7 +35,7 @@ export function VariablePicker({ onInsert }: Props) {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="border-b px-3 py-2 text-xs font-semibold">Insert from previous response</div>
-        <ScrollArea className="max-h-72">
+        <ScrollArea className="h-72">
           <div className="p-2">
             {prior.length === 0 && (
               <div className="px-2 py-6 text-center text-xs text-muted-foreground">
