@@ -209,7 +209,15 @@ function Editor() {
   );
 }
 
-function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromHere: () => void }) {
+function BlockEditor({
+  blockIdx,
+  onRunFromHere,
+  onRunOne,
+}: {
+  blockIdx: number;
+  onRunFromHere: () => void;
+  onRunOne: () => void;
+}) {
   const flow = useFlowStore((s) => s.flow)!;
   const block = flow.blocks[blockIdx];
   const runState = useFlowStore((s) => s.runStates[block.id]);
