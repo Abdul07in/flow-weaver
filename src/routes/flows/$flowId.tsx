@@ -292,15 +292,27 @@ function BlockEditor({
             onChange={(e) => updateBlock(block.id, { name: e.target.value })}
             className="h-9 max-w-xs text-base font-semibold"
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRunFromHere}
-            disabled={isRunning}
-            className="ml-auto gap-1.5"
-          >
-            <PlayCircle className="h-3.5 w-3.5" /> Run from here
-          </Button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRunOne}
+              disabled={isRunning}
+              className="gap-1.5"
+              title="Run only this block"
+            >
+              <Play className="h-3.5 w-3.5" /> Run this
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRunFromHere}
+              disabled={isRunning}
+              className="gap-1.5"
+            >
+              <PlayCircle className="h-3.5 w-3.5" /> Run from here
+            </Button>
+          </div>
         </div>
 
         {/* Method + URL */}
