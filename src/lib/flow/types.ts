@@ -19,6 +19,10 @@ export interface Block {
   params: KeyValueEntry[];
   headers: KeyValueEntry[];
   body: string; // raw JSON string
+  encryptEnabled?: boolean;
+  encryptScript?: string;
+  decryptEnabled?: boolean;
+  decryptScript?: string;
 }
 
 export interface BlockResponse {
