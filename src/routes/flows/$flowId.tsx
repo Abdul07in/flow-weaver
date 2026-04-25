@@ -216,7 +216,9 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
 
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("params");
+  const [scriptDialog, setScriptDialog] = useState<ScriptKind | null>(null);
   const status = runState?.status ?? "idle";
+  const cryptoOn = !!(block.encryptEnabled || block.decryptEnabled);
 
   // Auto-switch to Response tab when this block starts running or finishes during a run
   useEffect(() => {
