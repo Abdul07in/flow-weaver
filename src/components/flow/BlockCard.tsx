@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ChevronUp, ChevronDown, Copy, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Copy, Trash2, Lock } from "lucide-react";
 import type { Block, BlockStatus } from "@/lib/flow/types";
 import { MethodBadge } from "./MethodBadge";
 import { StatusDot } from "./StatusDot";
@@ -49,6 +49,9 @@ export function BlockCard({
         <span className="text-[10px] font-mono text-muted-foreground w-4">{index + 1}</span>
         <MethodBadge method={block.method} />
         <span className="flex-1 truncate text-sm font-medium">{block.name}</span>
+        {(block.encryptEnabled || block.decryptEnabled) && (
+          <Lock className="h-3 w-3 text-primary" aria-label="Crypto enabled" />
+        )}
         <StatusDot status={status} />
       </div>
 

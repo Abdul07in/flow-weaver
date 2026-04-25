@@ -14,6 +14,10 @@ export function createBlock(overrides: Partial<Block> = {}): Block {
     params: [createKV()],
     headers: [createKV("Content-Type", "application/json")],
     body: "",
+    encryptEnabled: false,
+    encryptScript: "",
+    decryptEnabled: false,
+    decryptScript: "",
     ...overrides,
   };
 }
