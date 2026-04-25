@@ -341,6 +341,10 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
               Body
             </TabsTrigger>
             <TabsTrigger value="response">Response</TabsTrigger>
+            <TabsTrigger value="crypto">
+              <Lock className={cn("mr-1 h-3 w-3", cryptoOn && "text-primary")} />
+              Crypto
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="params" className="rounded-md border bg-card p-4">
@@ -392,8 +396,109 @@ function BlockEditor({ blockIdx, onRunFromHere }: { blockIdx: number; onRunFromH
           <TabsContent value="response" className="rounded-md border bg-card p-4">
             <ResponseViewer response={runState?.response} status={runState?.status ?? "idle"} />
           </TabsContent>
+
+          <TabsContent value="crypto" className="space-y-3">
+            <CryptoRow
+              kind="encrypt"
+              enabled={!!block.encryptEnabled}
+              hasScript={!!block.encryptScript?.trim()}
+              onToggle={(v) => updateBlock(block.id, { encryptEnabled: v })}
+              onEdit={() => setScriptDialog("encrypt")}
+            />
+            <CryptoRow
+              kind="decrypt"
+              enabled={!!block.decryptEnabled}
+              hasScript={!!block.decryptScript?.trim()}
+              onToggle={(v) => updateBlock(block.id, { decryptEnabled: v })}
+              onEdit={() => setScriptDialog("decrypt")}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Scripts run in a sandboxed iframe. Encrypt transforms the outgoing body before sending;
+              Decrypt transforms the response body before it's stored or piped to next blocks.
+            </p>
+          </TabsContent>
         </Tabs>
+
+        <ScriptEditorDialog
+          open={scriptDialog !== null}
+          onOpenChange={(o) => !o && setScriptDialog(null)}
+          kind={scriptDialog ?? "encrypt"}
+          value={
+            scriptDialog === "decrypt"
+              ? (block.decryptScript ?? "")
+              : (block.encryptScript ?? "")
+          }
+          onSave={(code) => {
+            if (scriptDialog === "encrypt") {
+              updateBlock(block.id, { encryptScript: code, encryptEnabled: true });
+            } else if (scriptDialog === "decrypt") {
+              updateBlock(block.id, { decryptScript: code, decryptEnabled: true });
+            }
+          }}
+          sampleArgs={
+            scriptDialog === "decrypt"
+              ? { response: runState?.response ?? { status: 200, headers: {}, body: { example: true }, rawBody: "" } }
+              : {
+                  payload: (() => {
+                    try {
+                      return block.body ? JSON.parse(block.body) : {};
+                    } catch {
+                      return block.body;
+                    }
+                  })(),
+                  context: { headers: {}, url: block.url, method: block.method, vars: {} },
+                }
+          }
+        />
       </motion.div>
     </ScrollArea>
+  );
+}
+
+function CryptoRow({
+  kind,
+  enabled,
+  hasScript,
+  onToggle,
+  onEdit,
+}: {
+  kind: ScriptKind;
+  enabled: boolean;
+  hasScript: boolean;
+  onToggle: (v: boolean) => void;
+  onEdit: () => void;
+}) {
+  const Icon = kind === "encrypt" ? Lock : Unlock;
+  const title = kind === "encrypt" ? "Encrypt request" : "Decrypt response";
+  const subtitle =
+    kind === "encrypt"
+      ? "Transform the outgoing request body."
+      : "Transform the incoming response body.";
+  return (
+    <div className="flex items-center gap-3 rounded-md border bg-card p-4">
+      <div
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-md",
+          enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          {title}
+          {hasScript && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              script saved
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground">{subtitle}</div>
+      </div>
+      <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
+        <Pencil className="h-3 w-3" /> {hasScript ? "Edit" : "Add"} script
+      </Button>
+      <Switch checked={enabled} onCheckedChange={onToggle} />
+    </div>
   );
 }
