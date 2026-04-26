@@ -1,20 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Plus,
-  Play,
-  ArrowLeft,
-  Download,
-  Upload,
-  PlayCircle,
-  Loader2,
-  Lock,
-  Unlock,
-  Pencil,
-  Undo2,
-  Redo2,
-} from "lucide-react";
+import { Plus, Play, ArrowLeft, Download, Upload, CirclePlay as PlayCircle, Loader as Loader2, Lock, Clock as Unlock, Pencil, Undo2, Redo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -319,7 +306,7 @@ function BlockEditor({
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18 }}
         className={cn(
-          "mx-auto my-6 max-w-4xl space-y-4 rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)] ring-2 transition-all duration-300",
+          "mx-6 my-6 max-w-4xl space-y-4 rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)] ring-2 transition-all duration-300 xl:mx-auto",
           statusRing,
         )}
       >
