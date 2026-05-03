@@ -12,6 +12,8 @@ import {
   Lock,
   Unlock,
   Pencil,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +71,10 @@ function Editor() {
   const duplicateBlock = useFlowStore((s) => s.duplicateBlock);
   const moveBlock = useFlowStore((s) => s.moveBlock);
   const selectBlock = useFlowStore((s) => s.selectBlock);
+  const undo = useFlowStore((s) => s.undo);
+  const redo = useFlowStore((s) => s.redo);
+  const pastLen = useFlowStore((s) => s.past.length);
+  const futureLen = useFlowStore((s) => s.future.length);
 
   const { run, runOne } = useRunner();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,17 +83,28 @@ function Editor() {
     load(initial);
   }, [initial, load]);
 
-  // Cmd/Ctrl+Enter to run
+  // Keyboard shortcuts: Cmd/Ctrl+Enter to run, Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z (or Ctrl+Y) redo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "Enter") {
         e.preventDefault();
         void run(0);
+        return;
+      }
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        e.preventDefault();
+        redo();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [run]);
+  }, [run, undo, redo]);
 
   if (!flow) return null;
 
@@ -144,6 +161,27 @@ function Editor() {
               e.target.value = "";
             }}
           />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={undo}
+            disabled={pastLen === 0}
+            title="Undo (Ctrl/Cmd+Z)"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={redo}
+            disabled={futureLen === 0}
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+          >
+            <Redo2 className="h-3.5 w-3.5" />
+          </Button>
+          <div className="mx-1 h-5 w-px bg-border" />
           <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
             <Upload className="h-3.5 w-3.5" /> Import
           </Button>
