@@ -29,14 +29,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Flow Weaver" },
+      { name: "description", content: "Flow Weaver is a user-friendly web application for building and running sequential API workflows." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Flow Weaver" },
+      { property: "og:description", content: "Flow Weaver is a user-friendly web application for building and running sequential API workflows." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Flow Weaver" },
+      { name: "twitter:description", content: "Flow Weaver is a user-friendly web application for building and running sequential API workflows." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RtuXP9z6UrYXE82AsJYNbmfPHWd2/social-images/social-1778155140849-logo-flow.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RtuXP9z6UrYXE82AsJYNbmfPHWd2/social-images/social-1778155140849-logo-flow.webp" },
     ],
     links: [
       {
