@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FlowsFlowIdRouteImport } from './routes/flows/$flowId'
 import { Route as ApiRunBlockRouteImport } from './routes/api/run-block'
@@ -17,6 +18,11 @@ import { Route as ApiRunBlockRouteImport } from './routes/api/run-block'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ApiRunBlockRoute = ApiRunBlockRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/api/run-block': typeof ApiRunBlockRoute
   '/flows/$flowId': typeof FlowsFlowIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/api/run-block': typeof ApiRunBlockRoute
   '/flows/$flowId': typeof FlowsFlowIdRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/api/run-block': typeof ApiRunBlockRoute
   '/flows/$flowId': typeof FlowsFlowIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/api/run-block' | '/flows/$flowId'
+  fullPaths: '/' | '/dashboard' | '/login' | '/api/run-block' | '/flows/$flowId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/api/run-block' | '/flows/$flowId'
-  id: '__root__' | '/' | '/login' | '/api/run-block' | '/flows/$flowId'
+  to: '/' | '/dashboard' | '/login' | '/api/run-block' | '/flows/$flowId'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/run-block'
+    | '/flows/$flowId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ApiRunBlockRoute: typeof ApiRunBlockRoute
   FlowsFlowIdRoute: typeof FlowsFlowIdRoute
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ApiRunBlockRoute: ApiRunBlockRoute,
   FlowsFlowIdRoute: FlowsFlowIdRoute,
@@ -111,3 +135,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
