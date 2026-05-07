@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/useAuth";
+import { FlowDemo } from "@/components/landing/FlowDemo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -389,6 +390,16 @@ function HowItWorks() {
         >
           <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">From zero to flow in 60 seconds</h2>
           <p className="mt-4 text-muted-foreground">No installs. No setup. Just open and build.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="mt-14"
+        >
+          <FlowDemo />
         </motion.div>
 
         <div className="relative mt-16">
