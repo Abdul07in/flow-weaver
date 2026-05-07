@@ -50,7 +50,7 @@ export const Route = createFileRoute("/flows/$flowId")({
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <h1 className="text-xl font-semibold">Flow not found</h1>
-        <Link to="/" className="mt-3 inline-block text-sm text-primary hover:underline">
+        <Link to="/dashboard" className="mt-3 inline-block text-sm text-primary hover:underline">
           ← Back to dashboard
         </Link>
       </div>
@@ -139,7 +139,7 @@ function Editor() {
       {/* Top bar */}
       <header className="flex items-center gap-3 border-b bg-card/60 px-4 py-2.5 backdrop-blur">
         <Link
-          to="/"
+          to="/dashboard"
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
         >
           <ArrowLeft className="h-4 w-4" />
