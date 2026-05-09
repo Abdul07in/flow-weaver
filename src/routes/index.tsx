@@ -20,17 +20,22 @@ import { FlowDemo } from "@/components/landing/FlowDemo";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "API Flow Builder — Chain, run & inspect API requests for free" },
+      { title: "Flow Weaver — Free API flow builder to chain, run & inspect requests" },
       {
         name: "description",
         content:
-          "Free, browser-based API flow builder. Chain HTTP requests, pipe response data, encrypt payloads, and run flows — no signup, no servers.",
+          "Flow Weaver is a free, local-first API flow builder. Chain HTTP requests, pipe response data, encrypt payloads, and run flows — no signup, no servers.",
       },
-      { property: "og:title", content: "API Flow Builder — Free & local-first" },
-      {
-        property: "og:description",
-        content: "Chain HTTP requests, pipe response data, and run flows. 100% free, stored on your device.",
-      },
+      { name: "keywords", content: "Flow Weaver, API flow builder, chain API requests, HTTP workflow, local-first API client, free Postman alternative, pipe response data, API automation" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:site_name", content: "Flow Weaver" },
+      { property: "og:title", content: "Flow Weaver — Chain APIs, pipe data, run anywhere" },
+      { property: "og:description", content: "Free, local-first API flow builder. Chain HTTP requests, pipe response data, and run flows. No signup, no servers." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://floweaver.lovable.app/" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Flow Weaver — Chain APIs, pipe data, run anywhere" },
+      { name: "twitter:description", content: "Free, local-first API flow builder. Chain HTTP requests and pipe response data in your browser." },
     ],
   }),
   component: Landing,
@@ -60,7 +65,7 @@ function Nav({ user }: { user?: string }) {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[var(--shadow-soft)]">
             <Workflow className="h-5 w-5" />
           </div>
-          <span className="text-base font-bold">API Flow Builder</span>
+          <span className="text-base font-bold">Flow Weaver</span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
           <a href="#features" className="hover:text-foreground">Features</a>
@@ -488,7 +493,7 @@ function Footer() {
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Workflow className="h-3.5 w-3.5" />
           </div>
-          <span>API Flow Builder · free & open</span>
+          <span>Flow Weaver · free & local-first</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <a href="#features" className="hover:text-foreground">Features</a>
