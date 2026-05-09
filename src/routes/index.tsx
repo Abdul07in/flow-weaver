@@ -37,6 +37,22 @@ export const Route = createFileRoute("/")({
       { name: "twitter:title", content: "Flow Weaver — Chain APIs, pipe data, run anywhere" },
       { name: "twitter:description", content: "Free, local-first API flow builder. Chain HTTP requests and pipe response data in your browser." },
     ],
+    links: [{ rel: "canonical", href: "https://floweaver.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Flow Weaver",
+          applicationCategory: "DeveloperApplication",
+          operatingSystem: "Web",
+          description: "Free, local-first API flow builder. Chain HTTP requests, pipe response data, and run flows in your browser.",
+          url: "https://floweaver.lovable.app/",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
+      },
+    ],
   }),
   component: Landing,
 });
