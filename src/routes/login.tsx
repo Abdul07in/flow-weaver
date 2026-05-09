@@ -10,8 +10,10 @@ import { useAuth } from "@/lib/auth/useAuth";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — API Flow Builder" },
-      { name: "description", content: "Create your free account with just a username." },
+      { title: "Sign in — Flow Weaver" },
+      { name: "description", content: "Start using Flow Weaver free — pick a username and build API flows in your browser. No email, no password." },
+      { property: "og:title", content: "Sign in — Flow Weaver" },
+      { property: "og:description", content: "Pick a username and start weaving API flows. Free and local-first." },
     ],
   }),
   component: LoginPage,
@@ -54,7 +56,7 @@ function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Workflow className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold">API Flow Builder</span>
+          <span className="text-lg font-bold">Flow Weaver</span>
         </Link>
 
         <motion.div

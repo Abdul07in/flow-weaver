@@ -12,8 +12,10 @@ import { useAuth } from "@/lib/auth/useAuth";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — API Flow Builder" },
-      { name: "description", content: "Your saved API flows." },
+      { title: "Dashboard — Flow Weaver" },
+      { name: "description", content: "Your saved API flows in Flow Weaver — build, chain and run sequential API workflows in your browser." },
+      { property: "og:title", content: "Dashboard — Flow Weaver" },
+      { property: "og:description", content: "Manage your local-first API flows in Flow Weaver." },
     ],
   }),
   component: Dashboard,
@@ -71,7 +73,7 @@ function Dashboard() {
               <Workflow className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">API Flow Builder</h1>
+              <h1 className="text-base font-bold leading-tight">Flow Weaver</h1>
               <p className="text-[11px] text-muted-foreground">Chain. Run. Inspect.</p>
             </div>
           </Link>
