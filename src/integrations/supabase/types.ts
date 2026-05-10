@@ -135,10 +135,6 @@ export type Database = {
     }
     Functions: {
       claim_share_link: { Args: { _token: string }; Returns: string }
-      flow_permission: {
-        Args: { _flow: string; _user: string }
-        Returns: string
-      }
     }
     Enums: {
       [_ in never]: never
