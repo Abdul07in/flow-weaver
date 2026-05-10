@@ -107,7 +107,7 @@ export class CloudFlowRepository implements FlowRepository {
     // Try update first (works for owner OR editor-shared via RLS)
     const { data: updated, error: updErr } = await supabase
       .from("flows")
-      .update({ name: flow.name, data: flow as unknown as Record<string, unknown> })
+      .update({ name: flow.name, data: JSON.parse(JSON.stringify(flow)) })
       .eq("id", flow.id)
       .select("id");
     if (updErr) throw updErr;
@@ -118,7 +118,7 @@ export class CloudFlowRepository implements FlowRepository {
       id: flow.id,
       owner_id: uid,
       name: flow.name,
-      data: flow as unknown as Record<string, unknown>,
+      data: JSON.parse(JSON.stringify(flow)),
     });
     if (insErr) throw insErr;
   }
@@ -131,7 +131,7 @@ export class CloudFlowRepository implements FlowRepository {
       id: flow.id,
       owner_id: uid,
       name: flow.name,
-      data: flow as unknown as Record<string, unknown>,
+      data: JSON.parse(JSON.stringify(flow)),
     });
     if (error) throw error;
   }
