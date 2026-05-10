@@ -1,41 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
-
-const KEY = "apiflow.user.v1";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AuthUser {
-  username: string;
-  createdAt: number;
+  id: string;
+  email: string;
+  username: string; // display name (used by dashboard greeting)
 }
 
-function read(): AuthUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as AuthUser) : null;
-  } catch {
-    return null;
-  }
-}
-
-const listeners = new Set<() => void>();
-function emit() {
-  listeners.forEach((l) => l());
-}
-
-export function getCurrentUser(): AuthUser | null {
-  return read();
-}
-
-export function signIn(username: string): AuthUser {
-  const user: AuthUser = { username: username.trim(), createdAt: Date.now() };
-  window.localStorage.setItem(KEY, JSON.stringify(user));
-  emit();
-  return user;
-}
-
-export function signOut(): void {
-  window.localStorage.removeItem(KEY);
-  emit();
+function toAuthUser(u: User | null | undefined): AuthUser | null {
+  if (!u) return null;
+  const display =
+    (u.user_metadata?.display_name as string | undefined) ||
+    (u.email ? u.email.split("@")[0] : "User");
+  return { id: u.id, email: u.email ?? "", username: display };
 }
 
 export function useAuth() {
@@ -43,27 +21,39 @@ export function useAuth() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setUser(read());
-    setReady(true);
-    const update = () => setUser(read());
-    listeners.add(update);
-    window.addEventListener("storage", update);
-    return () => {
-      listeners.delete(update);
-      window.removeEventListener("storage", update);
-    };
+    // Set listener BEFORE getSession (per Supabase guidance)
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session: Session | null) => {
+      setUser(toAuthUser(session?.user));
+    });
+    void supabase.auth.getSession().then(({ data }) => {
+      setUser(toAuthUser(data.session?.user));
+      setReady(true);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  const login = useCallback((username: string) => {
-    const u = signIn(username);
-    setUser(u);
-    return u;
+  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
+    const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectTo,
+        data: { display_name: displayName ?? email.split("@")[0] },
+      },
+    });
+    if (error) throw error;
   }, []);
 
-  const logout = useCallback(() => {
-    signOut();
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  return { user, ready, login, logout };
+  return { user, ready, signUp, signIn, logout };
 }

@@ -1,79 +1,68 @@
 import { create } from "zustand";
 import type { Block, BlockResponse, BlockRunState, BlockStatus, Flow, KeyValueEntry } from "@/lib/flow/types";
 import { createBlock, createKV } from "@/lib/flow/factory";
-import { flowRepository } from "@/lib/storage/local";
+import { cloudFlowRepository } from "@/lib/storage/cloud";
 
 const HISTORY_LIMIT = 100;
 const COALESCE_MS = 400;
 
+export type FlowPermission = "owner" | "edit" | "view";
+
 interface FlowState {
   flow: Flow | null;
+  permission: FlowPermission;
   selectedBlockId: string | null;
   runStates: Record<string, BlockRunState>;
   isRunning: boolean;
-
-  // history
   past: Flow[];
   future: Flow[];
   _lastCommitAt: number;
   _lastCoalesceKey: string | null;
 
-  load: (flow: Flow) => void;
+  load: (flow: Flow, permission?: FlowPermission) => void;
+  applyRemote: (flow: Flow) => void;
   setName: (name: string) => void;
   selectBlock: (id: string) => void;
-
   addBlock: () => void;
   removeBlock: (id: string) => void;
   duplicateBlock: (id: string) => void;
   moveBlock: (id: string, dir: -1 | 1) => void;
   updateBlock: (id: string, patch: Partial<Block>) => void;
-
-  updateKV: (
-    blockId: string,
-    field: "params" | "headers",
-    entryId: string,
-    patch: Partial<KeyValueEntry>,
-  ) => void;
+  updateKV: (blockId: string, field: "params" | "headers", entryId: string, patch: Partial<KeyValueEntry>) => void;
   addKV: (blockId: string, field: "params" | "headers") => void;
   removeKV: (blockId: string, field: "params" | "headers", entryId: string) => void;
-
   setRunState: (blockId: string, status: BlockStatus, response?: BlockResponse) => void;
   resetRunStates: () => void;
   setIsRunning: (b: boolean) => void;
-
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
-
   persist: () => Promise<void>;
 }
 
 export const useFlowStore = create<FlowState>((set, get) => {
-  /**
-   * Apply a mutation to the current flow, push the previous version to history,
-   * clear the redo stack, and persist. `coalesceKey` allows consecutive edits
-   * (e.g., typing in the same text field) to merge into a single undo step
-   * when they happen within COALESCE_MS.
-   */
+  const canEdit = () => {
+    const p = get().permission;
+    return p === "owner" || p === "edit";
+  };
+
   const mutate = (
     fn: (flow: Flow) => Flow,
     opts: { coalesceKey?: string; extra?: Partial<FlowState> } = {},
   ) => {
+    if (!canEdit()) return;
     const state = get();
     const f = state.flow;
     if (!f) return;
     const next = fn(f);
     if (next === f) return;
-
     const now = Date.now();
     const coalesce =
       !!opts.coalesceKey &&
       opts.coalesceKey === state._lastCoalesceKey &&
       now - state._lastCommitAt < COALESCE_MS;
-
     const past = coalesce ? state.past : [...state.past, f].slice(-HISTORY_LIMIT);
-
     set({
       flow: next,
       past,
@@ -87,18 +76,19 @@ export const useFlowStore = create<FlowState>((set, get) => {
 
   return {
     flow: null,
+    permission: "owner",
     selectedBlockId: null,
     runStates: {},
     isRunning: false,
-
     past: [],
     future: [],
     _lastCommitAt: 0,
     _lastCoalesceKey: null,
 
-    load: (flow) =>
+    load: (flow, permission = "owner") =>
       set({
         flow,
+        permission,
         selectedBlockId: flow.blocks[0]?.id ?? null,
         runStates: {},
         isRunning: false,
@@ -108,18 +98,22 @@ export const useFlowStore = create<FlowState>((set, get) => {
         _lastCoalesceKey: null,
       }),
 
-    setName: (name) =>
-      mutate((f) => (f.name === name ? f : { ...f, name }), { coalesceKey: "name" }),
+    applyRemote: (flow) =>
+      set((s) => ({
+        flow,
+        selectedBlockId: flow.blocks.find((b) => b.id === s.selectedBlockId)?.id ?? flow.blocks[0]?.id ?? null,
+        past: [],
+        future: [],
+      })),
 
+    setName: (name) => mutate((f) => (f.name === name ? f : { ...f, name }), { coalesceKey: "name" }),
     selectBlock: (id) => set({ selectedBlockId: id }),
 
     addBlock: () => {
       const f = get().flow;
       if (!f) return;
       const block = createBlock({ name: `Step ${f.blocks.length + 1}` });
-      mutate((cur) => ({ ...cur, blocks: [...cur.blocks, block] }), {
-        extra: { selectedBlockId: block.id },
-      });
+      mutate((cur) => ({ ...cur, blocks: [...cur.blocks, block] }), { extra: { selectedBlockId: block.id } });
     },
 
     removeBlock: (id) => {
@@ -152,30 +146,22 @@ export const useFlowStore = create<FlowState>((set, get) => {
     },
 
     updateBlock: (id, patch) => {
-      // Coalesce typing into a single field on a single block
       const keys = Object.keys(patch);
-      const coalesceKey =
-        keys.length === 1 ? `updateBlock:${id}:${keys[0]}` : undefined;
+      const coalesceKey = keys.length === 1 ? `updateBlock:${id}:${keys[0]}` : undefined;
       mutate(
-        (cur) => ({
-          ...cur,
-          blocks: cur.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-        }),
+        (cur) => ({ ...cur, blocks: cur.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) }),
         { coalesceKey },
       );
     },
 
     updateKV: (blockId, field, entryId, patch) => {
       const keys = Object.keys(patch);
-      const coalesceKey =
-        keys.length === 1 ? `updateKV:${blockId}:${field}:${entryId}:${keys[0]}` : undefined;
+      const coalesceKey = keys.length === 1 ? `updateKV:${blockId}:${field}:${entryId}:${keys[0]}` : undefined;
       mutate(
         (cur) => ({
           ...cur,
           blocks: cur.blocks.map((b) =>
-            b.id === blockId
-              ? { ...b, [field]: b[field].map((e) => (e.id === entryId ? { ...e, ...patch } : e)) }
-              : b,
+            b.id === blockId ? { ...b, [field]: b[field].map((e) => (e.id === entryId ? { ...e, ...patch } : e)) } : b,
           ),
         }),
         { coalesceKey },
@@ -185,9 +171,7 @@ export const useFlowStore = create<FlowState>((set, get) => {
     addKV: (blockId, field) => {
       mutate((cur) => ({
         ...cur,
-        blocks: cur.blocks.map((b) =>
-          b.id === blockId ? { ...b, [field]: [...b[field], createKV()] } : b,
-        ),
+        blocks: cur.blocks.map((b) => (b.id === blockId ? { ...b, [field]: [...b[field], createKV()] } : b)),
       }));
     },
 
@@ -207,45 +191,26 @@ export const useFlowStore = create<FlowState>((set, get) => {
     setIsRunning: (b) => set({ isRunning: b }),
 
     undo: () => {
+      if (!canEdit()) return;
       const s = get();
       if (!s.flow || s.past.length === 0) return;
       const previous = s.past[s.past.length - 1];
       const past = s.past.slice(0, -1);
       const future = [s.flow, ...s.future].slice(0, HISTORY_LIMIT);
-      // Keep selected block if still present
-      const selected =
-        previous.blocks.find((b) => b.id === s.selectedBlockId)?.id ??
-        previous.blocks[0]?.id ??
-        null;
-      set({
-        flow: previous,
-        past,
-        future,
-        selectedBlockId: selected,
-        _lastCommitAt: 0,
-        _lastCoalesceKey: null,
-      });
+      const selected = previous.blocks.find((b) => b.id === s.selectedBlockId)?.id ?? previous.blocks[0]?.id ?? null;
+      set({ flow: previous, past, future, selectedBlockId: selected, _lastCommitAt: 0, _lastCoalesceKey: null });
       void get().persist();
     },
 
     redo: () => {
+      if (!canEdit()) return;
       const s = get();
       if (!s.flow || s.future.length === 0) return;
       const next = s.future[0];
       const future = s.future.slice(1);
       const past = [...s.past, s.flow].slice(-HISTORY_LIMIT);
-      const selected =
-        next.blocks.find((b) => b.id === s.selectedBlockId)?.id ??
-        next.blocks[0]?.id ??
-        null;
-      set({
-        flow: next,
-        past,
-        future,
-        selectedBlockId: selected,
-        _lastCommitAt: 0,
-        _lastCoalesceKey: null,
-      });
+      const selected = next.blocks.find((b) => b.id === s.selectedBlockId)?.id ?? next.blocks[0]?.id ?? null;
+      set({ flow: next, past, future, selectedBlockId: selected, _lastCommitAt: 0, _lastCoalesceKey: null });
       void get().persist();
     },
 
@@ -253,6 +218,7 @@ export const useFlowStore = create<FlowState>((set, get) => {
     canRedo: () => get().future.length > 0,
 
     persist: async () => {
+      if (!canEdit()) return;
       const f = get().flow;
       if (!f) return;
       const lastRun = Object.values(get().runStates);
@@ -263,7 +229,15 @@ export const useFlowStore = create<FlowState>((set, get) => {
             ? "success"
             : "idle"
         : f.lastRunStatus;
-      await flowRepository.save({ ...f, lastRunStatus, lastRunAt: lastRun.length ? Date.now() : f.lastRunAt });
+      try {
+        await cloudFlowRepository.save({
+          ...f,
+          lastRunStatus,
+          lastRunAt: lastRun.length ? Date.now() : f.lastRunAt,
+        });
+      } catch (e) {
+        console.error("Failed to save flow", e);
+      }
     },
   };
 });

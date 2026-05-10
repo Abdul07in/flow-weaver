@@ -1,106 +1,93 @@
-## Per-block Encryption / Decryption hooks
+## Goal
 
-Add an optional, per-block scripting layer that lets users transform the **outgoing request body** (encrypt) and the **incoming response body** (decrypt) using their own JavaScript. Both are independent, optional, and only affect the block they're configured on.
+Add online flow sharing between users with view/edit permissions and auto-refresh on save. This requires moving from username-only localStorage to real accounts and a cloud database.
 
-## How it works (user view)
+## High-level changes
 
-On any block, two new toggles appear in the block editor: **Encrypt request** and **Decrypt response**. Toggling either opens a code editor modal where the user writes a small JS function. A small lock icon on the block card indicates encryption/decryption is enabled.
+1. **Enable Lovable Cloud** (Postgres + Auth).
+2. **Replace username-only auth** with email + password (Lovable Cloud auth). Keep the same minimalist login UI.
+3. **Move flow storage** from `localStorage` (`flowRepository`) to a `CloudFlowRepository` backed by Postgres. Local cache stays as offline fallback.
+4. **Add sharing model** with two mechanisms (direct invite + link) and two permissions (view, edit).
+5. **Auto-refresh on save**: viewers' open flow re-fetches on a short interval (and on window focus) so they see the owner's saved changes within ~2 seconds.
 
-### Encrypt request
-- Triggered just before the request is sent.
-- User script signature:
-  ```js
-  // available: payload (parsed JSON if valid, else raw string), context
-  // context = { headers, url, method, vars }  // vars = previous responses by name
-  // must return: string | object  → becomes the new request body
-  // may also return { body, headers } to also override/add headers (e.g. X-Encrypted: true)
-  return { encrypted: btoa(JSON.stringify(payload)) };
-  ```
+## Database schema
 
-### Decrypt response
-- Triggered right after the response arrives, before it's stored / piped to next blocks.
-- User script signature:
-  ```js
-  // available: response = { status, headers, body, rawBody }
-  // must return: any  → replaces response.body (and rawBody is regenerated)
-  return JSON.parse(atob(response.body.encrypted));
-  ```
+```text
+profiles
+  id uuid PK = auth.users.id
+  email text unique
+  display_name text
+  created_at timestamptz
 
-Both scripts run in a **sandboxed iframe** (browser-side, before/after the proxy call) with a 2-second timeout. Errors surface as a red banner in the Response tab and mark the block as error (script error is distinct from HTTP error).
+flows
+  id uuid PK
+  owner_id uuid -> auth.users.id
+  name text
+  data jsonb               -- entire Flow object (blocks, etc.)
+  updated_at timestamptz   -- bumped on every save (drives auto-refresh)
+  created_at timestamptz
 
-## Scope (v1)
+flow_shares
+  id uuid PK
+  flow_id uuid -> flows.id (cascade)
+  shared_with uuid -> auth.users.id   -- nullable when via link
+  permission text check (in 'view','edit')
+  created_at timestamptz
+  unique(flow_id, shared_with)
 
-- Per-block toggle + script storage for `encryptScript` and `decryptScript`
-- Sandboxed execution via hidden `<iframe sandbox="allow-scripts">` + `postMessage`, with timeout
-- Code editor modal (textarea with monospace + line numbers; no heavy editor dep)
-- Template snippets dropdown: Base64, AES-GCM (Web Crypto), HMAC signing, identity
-- Pipe-through behavior: decrypted body is what next blocks see via `{{Block.body...}}`
-- Visual indicator on BlockCard (lock icon) + small badge in editor header
-- Persisted with the rest of the flow (localStorage + export/import JSON)
-
-## Out of scope
-
-- Shared/global crypto helpers across blocks
-- Key management UI / secrets vault (user pastes keys into their script for now)
-- Streaming responses, binary bodies
-
-## Technical changes
-
-### Types — `src/lib/flow/types.ts`
-Add to `Block`:
-```ts
-encryptEnabled?: boolean;
-encryptScript?: string;   // JS source
-decryptEnabled?: boolean;
-decryptScript?: string;
+flow_share_links
+  id uuid PK
+  flow_id uuid -> flows.id (cascade)
+  token text unique         -- random, used in /shared/:token URL
+  permission text check (in 'view','edit')
+  created_at timestamptz
 ```
 
-### Sandbox runner — new `src/lib/scripting/sandbox.ts`
-- Lazy-creates a hidden iframe with `sandbox="allow-scripts"` and `srcdoc` containing a message listener that `eval`s the user function as `new Function('payload','context', userCode)` and posts the return value back.
-- Exposes `runScript(code, args, { timeoutMs = 2000 })` returning `Promise<{ ok, value, error }>`.
-- Handles serialization (structured clone) and timeout via `setTimeout` + reject.
+RLS:
+- `profiles`: user can select all (for share-by-email lookup of display name only), update only self.
+- `flows`: owner full access; shared users SELECT if row exists in `flow_shares` for them; UPDATE if their permission='edit'; DELETE owner only.
+- `flow_shares`: owner of parent flow manages; shared user can SELECT their own row (to know perm).
+- `flow_share_links`: owner manages; anyone authenticated can SELECT by token (needed to claim access).
 
-### Executor — `src/lib/runner/executor.ts`
-In `ProxyExecutor.execute`:
-1. Build request as today.
-2. If `block.encryptEnabled && block.encryptScript`:
-   - Parse `req.body` as JSON if possible, pass as `payload`.
-   - Run script; on success replace `req.body` (stringify if object) and merge optional `headers`.
-   - On script error → return a `BlockResponse` with `error: "Encrypt script: ..."`.
-3. POST to `/api/run-block` (unchanged).
-4. If `block.decryptEnabled && block.decryptScript`:
-   - Run script with `response`.
-   - Replace `response.body`, regenerate `response.rawBody = JSON.stringify(newBody)`, recompute `sizeBytes`.
-   - On script error → return response with `error: "Decrypt script: ..."` and `ok: false`.
+A small SECURITY DEFINER function `claim_share_link(token)` inserts a `flow_shares` row for the current user when they open a link.
 
-### UI — script editor modal — new `src/components/flow/ScriptEditorDialog.tsx`
-Built on existing `Dialog`. Props: `title`, `value`, `onSave`, `kind: "encrypt" | "decrypt"`, plus a "Test" button that runs the script against the block's last response (decrypt) or current body (encrypt) and shows result/error inline. Snippet dropdown inserts templates.
+## Code structure
 
-### Block editor — `src/routes/flows/$flowId.tsx`
-- Add a new tab **"Crypto"** (or two small toggle rows above the tabs) with two cards: Encrypt request / Decrypt response, each with a switch + "Edit script" button opening the dialog.
-- Show small lock icon next to block name in header when either is enabled.
+```text
+src/integrations/supabase/...        (auto-generated by Cloud)
+src/lib/auth/useAuth.ts              REPLACE: real Supabase session
+src/lib/storage/cloud.ts             NEW CloudFlowRepository
+src/lib/storage/repository.ts        unchanged interface
+src/lib/sharing/shares.ts            NEW: list/add/remove shares + links
+src/routes/login.tsx                 email + password form
+src/routes/dashboard.tsx             sections: My flows / Shared with me
+src/routes/flows/$flowId.tsx         read-only mode if perm='view';
+                                     poll updated_at every 2s when not the owner
+src/routes/shared.$token.tsx         NEW: claim link -> redirect to flow
+src/components/flow/ShareDialog.tsx  NEW: invite by email + manage links
+```
 
-### BlockCard — `src/components/flow/BlockCard.tsx`
-- Show a small `Lock` lucide icon next to method badge when `encryptEnabled || decryptEnabled`.
+Permission gating in editor:
+- Compute `canEdit` from `(owner OR share.perm='edit')`.
+- When `!canEdit`: disable all inputs, hide Add/Run-mutating actions, show "View only" badge. Run buttons stay enabled (running doesn't mutate the flow).
 
-### Store — `src/store/flowStore.ts`
-No new actions; reuse `updateBlock` for the new fields.
+Auto-refresh strategy (per the user's pick):
+- Owner: saves push immediately on change (debounced 400 ms) — this updates `updated_at` server-side.
+- Non-owner: every 2s and on window focus, fetch only `updated_at` for the flow; if newer than local, refetch full flow and merge into the store (preserving local UI state like selected block).
 
-### Factory — `src/lib/flow/factory.ts`
-Default new fields to `false` / empty string.
+## Migration of existing local flows
 
-## Security notes
+On first sign-in after the upgrade, if `localStorage` has flows from the old `apiflow.flows.v1` key, offer a one-time "Import 3 local flows to your account" toast → bulk insert into `flows` then clear local key. Old `apiflow.user.v1` username key is removed.
 
-- Scripts run in an iframe with `sandbox="allow-scripts"` only (no same-origin) → cannot touch app DOM, cookies, or localStorage.
-- 2s timeout prevents infinite loops from hanging the runner.
-- Scripts are stored in plaintext localStorage — clearly noted in a small helper text under the editor.
+## Out of scope (explicit)
 
-## Files touched / created
+- Real-time cursors / collaborative editing — picked "auto-refresh on save".
+- OAuth providers (Google/Apple) — only email + password as the user chose.
+- Comments, version history, audit log.
+- Transferring ownership.
 
-- create `src/lib/scripting/sandbox.ts`
-- create `src/components/flow/ScriptEditorDialog.tsx`
-- edit `src/lib/flow/types.ts`
-- edit `src/lib/flow/factory.ts`
-- edit `src/lib/runner/executor.ts`
-- edit `src/routes/flows/$flowId.tsx`
-- edit `src/components/flow/BlockCard.tsx`
+## Technical notes
+
+- Cloud client is browser-only; all reads/writes happen from React via `@/integrations/supabase/client` (RLS enforces who can do what — no need for server functions for this feature).
+- `flows.data` is jsonb so the `Flow` type stays the canonical shape.
+- Polling is cheap: viewers fetch a single `updated_at` column every 2s only while a shared flow editor is open.

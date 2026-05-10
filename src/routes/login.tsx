@@ -5,43 +5,52 @@ import { Workflow, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth/useAuth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — Flow Weaver" },
-      { name: "description", content: "Start using Flow Weaver free — pick a username and build API flows in your browser. No email, no password." },
+      { name: "description", content: "Sign in or create a free Flow Weaver account to build, run and share API flows." },
       { property: "og:title", content: "Sign in — Flow Weaver" },
-      { property: "og:description", content: "Pick a username and start weaving API flows. Free and local-first." },
+      { property: "og:description", content: "Free account. Build, run and share API flows." },
     ],
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { user, ready, login } = useAuth();
+  const { user, ready, signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ready && user) void navigate({ to: "/dashboard" });
   }, [ready, user, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const u = username.trim();
-    if (u.length < 2) {
-      setError("Username must be at least 2 characters.");
-      return;
+    setError(null);
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        if (password.length < 6) throw new Error("Password must be at least 6 characters.");
+        await signUp(email.trim(), password, displayName.trim() || undefined);
+      } else {
+        await signIn(email.trim(), password);
+      }
+      void navigate({ to: "/dashboard" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
     }
-    if (!/^[a-zA-Z0-9_.-]+$/.test(u)) {
-      setError("Use letters, numbers, _ . - only.");
-      return;
-    }
-    login(u);
-    void navigate({ to: "/dashboard" });
   };
 
   return (
@@ -64,34 +73,62 @@ function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full rounded-2xl border bg-card p-8 shadow-[var(--shadow-elevated)]"
         >
-          <h1 className="text-2xl font-bold">Welcome</h1>
+          <h1 className="text-2xl font-bold">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pick a username to get started. No password, no email — your data stays in your browser.
+            Free forever. Build flows, share them with your team, see live edits.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                autoFocus
-                placeholder="e.g. alex"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  setError(null);
-                }}
-              />
+          <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-5">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Sign up</TabsTrigger>
+            </TabsList>
+
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Display name</Label>
+                  <Input
+                    id="displayName"
+                    placeholder="e.g. Alex"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
               {error && <p className="text-xs text-destructive">{error}</p>}
-            </div>
-            <Button type="submit" className="w-full gap-1.5">
-              Continue <ArrowRight className="h-4 w-4" />
-            </Button>
-          </form>
-
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            100% free · stored locally on your device
-          </p>
+              <Button type="submit" disabled={busy} className="w-full gap-1.5">
+                {mode === "signup" ? "Create account" : "Sign in"} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </form>
+            <TabsContent value="signin" />
+            <TabsContent value="signup" />
+          </Tabs>
         </motion.div>
 
         <Link to="/" className="mt-6 text-xs text-muted-foreground hover:text-foreground">

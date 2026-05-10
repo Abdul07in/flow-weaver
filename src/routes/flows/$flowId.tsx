@@ -28,8 +28,10 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { useFlowStore } from "@/store/flowStore";
-import { flowRepository } from "@/lib/storage/local";
+import { useFlowStore, type FlowPermission } from "@/store/flowStore";
+import { cloudFlowRepository } from "@/lib/storage/cloud";
+import { ShareDialog } from "@/components/flow/ShareDialog";
+import { Share2, Eye } from "lucide-react";
 import { HTTP_METHODS, type HttpMethod } from "@/lib/flow/types";
 import { BlockCard } from "@/components/flow/BlockCard";
 import { KeyValueEditor } from "@/components/flow/KeyValueEditor";
