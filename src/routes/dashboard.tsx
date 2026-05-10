@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Copy, FileJson, Workflow, LogOut } from "lucide-react";
+import { Plus, Trash2, FileJson, Workflow, LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { flowRepository } from "@/lib/storage/local";
+import { cloudFlowRepository } from "@/lib/storage/cloud";
 import { createFlow } from "@/lib/flow/factory";
 import type { Flow } from "@/lib/flow/types";
 import { StatusDot } from "@/components/flow/StatusDot";
@@ -13,16 +13,15 @@ export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Flow Weaver" },
-      { name: "description", content: "Your saved API flows in Flow Weaver — build, chain and run sequential API workflows in your browser." },
-      { property: "og:title", content: "Dashboard — Flow Weaver" },
-      { property: "og:description", content: "Manage your local-first API flows in Flow Weaver." },
+      { name: "description", content: "Your saved API flows in Flow Weaver." },
     ],
   }),
   component: Dashboard,
 });
 
 function Dashboard() {
-  const [flows, setFlows] = useState<Flow[]>([]);
+  const [owned, setOwned] = useState<Flow[]>([]);
+  const [shared, setShared] = useState<Array<Flow & { permission: "view" | "edit" }>>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user, ready, logout } = useAuth();
@@ -31,34 +30,34 @@ function Dashboard() {
     if (ready && !user) void navigate({ to: "/login" });
   }, [ready, user, navigate]);
 
-  useEffect(() => {
-    void flowRepository.list().then((f) => {
-      setFlows(f);
-      setLoading(false);
-    });
-  }, []);
+  const refresh = async () => {
+    const [o, s] = await Promise.all([
+      cloudFlowRepository.listOwned(),
+      cloudFlowRepository.listShared(),
+    ]);
+    setOwned(o);
+    setShared(s);
+    setLoading(false);
+  };
 
-  const refresh = async () => setFlows(await flowRepository.list());
+  useEffect(() => {
+    if (!user) return;
+    void refresh();
+  }, [user]);
 
   const newFlow = async () => {
     const f = createFlow("Untitled Flow");
-    await flowRepository.save(f);
+    await cloudFlowRepository.create(f);
     void navigate({ to: "/flows/$flowId", params: { flowId: f.id } });
   };
 
   const remove = async (id: string) => {
-    await flowRepository.remove(id);
+    await cloudFlowRepository.remove(id);
     void refresh();
   };
 
-  const duplicate = async (f: Flow) => {
-    const copy = { ...f, id: createFlow().id, name: `${f.name} (copy)`, createdAt: Date.now(), updatedAt: Date.now() };
-    await flowRepository.save(copy);
-    void refresh();
-  };
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     void navigate({ to: "/" });
   };
 
@@ -74,7 +73,7 @@ function Dashboard() {
             </div>
             <div>
               <h1 className="text-base font-bold leading-tight">Flow Weaver</h1>
-              <p className="text-[11px] text-muted-foreground">Chain. Run. Inspect.</p>
+              <p className="text-[11px] text-muted-foreground">Chain. Run. Share.</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -91,40 +90,42 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        {loading ? null : flows.length === 0 ? (
-          <EmptyState onCreate={newFlow} />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {flows.map((f) => (
-                <motion.div
-                  layout
-                  key={f.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                >
-                  <FlowCard flow={f} onDelete={() => remove(f.id)} onDuplicate={() => duplicate(f)} />
-                </motion.div>
+      <main className="mx-auto max-w-6xl px-6 py-10 space-y-10">
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">My flows</h2>
+          {loading ? null : owned.length === 0 ? (
+            <EmptyState onCreate={newFlow} />
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence mode="popLayout">
+                {owned.map((f) => (
+                  <motion.div layout key={f.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
+                    <FlowCard flow={f} onDelete={() => remove(f.id)} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </section>
+
+        {shared.length > 0 && (
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              <Users className="h-3.5 w-3.5" /> Shared with me
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {shared.map((f) => (
+                <FlowCard key={f.id} flow={f} sharedBadge={f.permission} />
               ))}
-            </AnimatePresence>
-          </div>
+            </div>
+          </section>
         )}
       </main>
     </div>
   );
 }
 
-function FlowCard({
-  flow,
-  onDelete,
-  onDuplicate,
-}: {
-  flow: Flow;
-  onDelete: () => void;
-  onDuplicate: () => void;
-}) {
+function FlowCard({ flow, onDelete, sharedBadge }: { flow: Flow; onDelete?: () => void; sharedBadge?: "view" | "edit" }) {
   return (
     <Link
       to="/flows/$flowId"
@@ -136,36 +137,29 @@ function FlowCard({
           <div className="flex items-center gap-2">
             <h3 className="truncate font-semibold">{flow.name}</h3>
             {flow.lastRunStatus && <StatusDot status={flow.lastRunStatus} />}
+            {sharedBadge && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                {sharedBadge === "edit" ? "Can edit" : "View only"}
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {flow.blocks.length} {flow.blocks.length === 1 ? "block" : "blocks"} · updated{" "}
             {new Date(flow.updatedAt).toLocaleDateString()}
           </p>
         </div>
-        <div className="flex opacity-0 transition group-hover:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.preventDefault();
-              onDuplicate();
-            }}
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 hover:text-destructive"
-            onClick={(e) => {
-              e.preventDefault();
-              onDelete();
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        {onDelete && (
+          <div className="flex opacity-0 transition group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:text-destructive"
+              onClick={(e) => { e.preventDefault(); onDelete(); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -173,21 +167,13 @@ function FlowCard({
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mx-auto mt-20 max-w-md rounded-2xl border border-dashed bg-card/40 p-10 text-center"
-    >
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mt-10 max-w-md rounded-2xl border border-dashed bg-card/40 p-10 text-center">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <FileJson className="h-7 w-7" />
       </div>
       <h2 className="mt-4 text-lg font-semibold">No flows yet</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Create your first flow to chain API calls and pipe data between them.
-      </p>
-      <Button onClick={onCreate} className="mt-5 gap-1.5">
-        <Plus className="h-4 w-4" /> Create your first flow
-      </Button>
+      <p className="mt-1 text-sm text-muted-foreground">Create your first flow to chain API calls.</p>
+      <Button onClick={onCreate} className="mt-5 gap-1.5"><Plus className="h-4 w-4" /> Create your first flow</Button>
     </motion.div>
   );
 }
