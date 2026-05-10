@@ -14,13 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      flow_share_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          flow_id: string
+          id: string
+          permission: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          flow_id: string
+          id?: string
+          permission: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          flow_id?: string
+          id?: string
+          permission?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_share_links_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flow_shares: {
+        Row: {
+          created_at: string
+          flow_id: string
+          id: string
+          permission: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          flow_id: string
+          id?: string
+          permission: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          flow_id?: string
+          id?: string
+          permission?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_shares_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flows: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_share_link: { Args: { _token: string }; Returns: string }
+      flow_permission: {
+        Args: { _flow: string; _user: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
