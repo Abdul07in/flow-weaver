@@ -121,6 +121,18 @@ function Editor() {
     return () => window.removeEventListener("keydown", handler);
   }, [run, undo, redo]);
 
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold">{loadError}</h1>
+          <Link to="/dashboard" className="mt-3 inline-block text-sm text-primary hover:underline">
+            ← Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
   if (!flow) return null;
 
   const selected = flow.blocks.find((b) => b.id === selectedBlockId) ?? flow.blocks[0];
