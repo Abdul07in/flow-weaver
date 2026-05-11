@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -42,11 +42,6 @@ import { useRunner } from "@/hooks/useRunner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/flows/$flowId")({
-  loader: async ({ params }) => {
-    const flow = await flowRepository.get(params.flowId);
-    if (!flow) throw notFound();
-    return { flow };
-  },
   component: Editor,
   notFoundComponent: () => (
     <div className="flex min-h-screen items-center justify-center">
@@ -61,7 +56,8 @@ export const Route = createFileRoute("/flows/$flowId")({
 });
 
 function Editor() {
-  const { flow: initial } = Route.useLoaderData();
+  const { flowId } = Route.useParams();
+  const [loadError, setLoadError] = useState<string | null>(null);
   const flow = useFlowStore((s) => s.flow);
   const selectedBlockId = useFlowStore((s) => s.selectedBlockId);
   const runStates = useFlowStore((s) => s.runStates);
@@ -82,8 +78,25 @@ function Editor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    load(initial);
-  }, [initial, load]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [f, perm] = await Promise.all([
+          cloudFlowRepository.get(flowId),
+          cloudFlowRepository.getPermission(flowId),
+        ]);
+        if (cancelled) return;
+        if (!f || perm === "none") {
+          setLoadError("Flow not found");
+          return;
+        }
+        load(f, perm as FlowPermission);
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Failed to load flow");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [flowId, load]);
 
   // Keyboard shortcuts: Cmd/Ctrl+Enter to run, Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z (or Ctrl+Y) redo
   useEffect(() => {
@@ -108,6 +121,18 @@ function Editor() {
     return () => window.removeEventListener("keydown", handler);
   }, [run, undo, redo]);
 
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold">{loadError}</h1>
+          <Link to="/dashboard" className="mt-3 inline-block text-sm text-primary hover:underline">
+            ← Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
   if (!flow) return null;
 
   const selected = flow.blocks.find((b) => b.id === selectedBlockId) ?? flow.blocks[0];
@@ -129,7 +154,7 @@ function Editor() {
       const data = JSON.parse(text);
       data.id = flow.id;
       data.updatedAt = Date.now();
-      await flowRepository.save(data);
+      await cloudFlowRepository.save(data);
       load(data);
     } catch (e) {
       console.error("Failed to import flow", e);

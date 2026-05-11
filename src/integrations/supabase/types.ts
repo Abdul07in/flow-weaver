@@ -135,6 +135,8 @@ export type Database = {
     }
     Functions: {
       claim_share_link: { Args: { _token: string }; Returns: string }
+      flow_share_permission: { Args: { _flow_id: string }; Returns: string }
+      is_flow_owner: { Args: { _flow_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

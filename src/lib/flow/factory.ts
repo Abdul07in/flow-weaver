@@ -25,7 +25,7 @@ export function createBlock(overrides: Partial<Block> = {}): Block {
 export function createFlow(name = "Untitled Flow"): Flow {
   const now = Date.now();
   return {
-    id: nanoid(12),
+    id: (typeof crypto !== "undefined" && "randomUUID" in crypto) ? crypto.randomUUID() : nanoid(12),
     name,
     blocks: [createBlock({ name: "Step 1" })],
     createdAt: now,
